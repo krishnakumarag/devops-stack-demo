@@ -72,7 +72,6 @@ mvn clean package
 
 **Step 4 — Update the port and run in background**
 ```bash
-
 # Run in background
 nohup mvn spring-boot:run > app.log 2>&1 &
 
