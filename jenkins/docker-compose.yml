@@ -5,6 +5,7 @@ services:
     ports:
       - "8080:8080"    # Jenkins UI
       - "50000:50000"  # Agent communication port
+      - "8081:8082"     # Our deployed app
     volumes:
       - jenkins_home:/var/jenkins_home
     restart: unless-stopped
