@@ -51,7 +51,6 @@ apt update -y
 apt install -y git
 
 # Install Java 21
-apt-cache search openjdk-21
 apt install -y openjdk-21-jdk
 java -version
 
@@ -61,14 +60,14 @@ mvn -version
 
 #Install curl
 apt install -y curl
-curl -version
+curl --version
 ```
 
 **Step 3 — Clone the repo and build**
 ```bash
 git clone https://github.com/krishnakumarag/devops-stack-demo.git
 cd devops-stack-demo/app
-mvn clean package -DskipTests
+mvn clean package
 ```
 
 **Step 4 — Update the port and run in background**
