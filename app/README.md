@@ -72,14 +72,10 @@ mvn clean package
 
 **Step 4 — Update the port and run in background**
 ```bash
-# App is configured for 8080 by default, change it to 8082
-export SERVER_PORT=8082
 
 # Run in background
 nohup mvn spring-boot:run > app.log 2>&1 &
 
-# Wait for startup
-sleep 15
 
 # Confirm it is up (inside container)
 curl http://localhost:8082/actuator/health
