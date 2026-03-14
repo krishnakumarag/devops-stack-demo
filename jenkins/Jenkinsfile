@@ -1,59 +1,28 @@
 pipeline {
     agent any
-
+    options {
+        skipStagesAfterUnstable()
+    }
     stages {
-        stage('Checkout') {
-            steps {
-                echo 'Checking out code...'
-                checkout scm
-            }
-        }
-
         stage('Build') {
             steps {
-                echo 'Building the application...'
-                sh 'mvn -f app/pom.xml clean package -DskipTests'
+                sh 'mvn -B -DskipTests clean package'
             }
         }
-
         stage('Test') {
             steps {
-                echo 'Running tests...'
-                sh 'mvn -f app/pom.xml test'
+                sh 'mvn test'
             }
             post {
                 always {
-                    junit 'app/target/surefire-reports/*.xml'
+                    junit 'target/surefire-reports/*.xml'
                 }
             }
         }
-
-        stage('Deploy') {
+        stage('Deliver') { 
             steps {
-                echo 'Deploying application...'
-                sh '''#!/bin/bash
-                    JAR=/var/jenkins_home/workspace/devops-stack-demo/app/target/demo-0.0.1-SNAPSHOT.jar
-
-                    # Kill existing app
-                    kill $(cat /tmp/app.pid) 2>/dev/null || true
-                    sleep 2
-
-                    # Start app
-                    sh -c "nohup java -jar $JAR --server.port=8082 >> /tmp/app.log 2>&1 & echo \\$! > /tmp/app.pid" &
-
-                    sleep 15
-                    curl http://localhost:8082/actuator/health
-                '''
+                sh './jenkins/scripts/deliver.sh' 
             }
-        }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
-        }
-        failure {
-            echo 'Pipeline failed — check logs above.'
         }
     }
 }
