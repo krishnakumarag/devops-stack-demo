@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 RUN apt-get update && \
-    apt-get install -y openssh-server && \
+    apt-get install -y openssh-server sudo && \
     apt-get clean
 
 RUN mkdir -p /app && \
@@ -12,6 +12,8 @@ RUN mkdir -p /app && \
     chmod 700 /home/devops/.ssh && \
     chown -R devops:devops /home/devops/.ssh && \
     chown -R devops:devops /app
+    echo 'devops ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 
 EXPOSE 22
 EXPOSE 8082
