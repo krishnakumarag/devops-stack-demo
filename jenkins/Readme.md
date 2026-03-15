@@ -60,7 +60,7 @@ Search and install these one by one:
 |--------|---------|
 | Git | Clone repositories from GitHub |
 | Maven Integration | Run Maven build commands |
-| Pipeline | Enable Jenkinsfile-based pipelines |
+| Pipeline Stage View | Enable Jenkinsfile-based pipelines |
 | Git Parameter | Choose branch when triggering builds |
 | JUnit | Display test results in Jenkins UI |
 
