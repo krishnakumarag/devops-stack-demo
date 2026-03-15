@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    tools {
+        maven 'Maven'
+    }
+
+    options {
+        skipStagesAfterUnstable()
+    }
+
+    environment {
+        ANSIBLE_CONTROLLER_IP = '172.18.0.3'
+        ANSIBLE_USER          = 'root'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'mvn -f app/pom.xml -B -DskipTests clean package'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'mvn -f app/pom.xml test'
+            }
+            post {
+                always {
+                    junit 'app/target/surefire-reports/*.xml'
+                }
+            }
+        }
+
+        stage('Provision Server') {
+            steps {
+                sshagent(['ansible-controller-ssh']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no \
+                            ${ANSIBLE_USER}@${ANSIBLE_CONTROLLER_IP} \
+                            "ansible-playbook -i /ansible/hosts.ini /ansible/provision.yml"
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sshagent(['ansible-controller-ssh']) {
+                    sh '''
+                        # Copy JAR to ansible controller
+                        scp -o StrictHostKeyChecking=no \
+                            app/target/demo-0.0.1-SNAPSHOT.jar \
+                            ${ANSIBLE_USER}@${ANSIBLE_CONTROLLER_IP}:/tmp/demo-0.0.1-SNAPSHOT.jar
+
+                        # Trigger deploy playbook
+                        ssh -o StrictHostKeyChecking=no \
+                            ${ANSIBLE_USER}@${ANSIBLE_CONTROLLER_IP} \
+                            "ansible-playbook -i /ansible/hosts.ini /ansible/deploy.yml"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Pipeline failed — check logs above.'
+        }
+    }
+}
