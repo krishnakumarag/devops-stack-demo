@@ -23,4 +23,16 @@ set +x
 echo 'The following command runs and outputs the execution of your Java'
 echo 'application (which Jenkins built using Maven) to the Jenkins UI.'
 set -x
-java -jar app/target/${NAME}-${VERSION}.jar &
+JAR=app/target/${NAME}-${VERSION}.jar
+
+# Kill existing app if running
+kill $(cat /tmp/app.pid) 2>/dev/null || true
+sleep 2
+
+# Run in background
+nohup java -jar $JAR --server.port=8082 > /tmp/app.log 2>&1 &
+echo $! > /tmp/app.pid
+
+# Wait and confirm
+sleep 15
+curl http://localhost:8082/actuator/health
