@@ -52,8 +52,9 @@ docker rm ansible-controller
 ```
 ### 2.2 build and run 
 ```cmd
-docker build -t ansible-controller ./ansible
-docker run -d --name ansible-controller -v C:\YOUR_PATH\devops-stack-demo\ansible:/ansible ansible-controller:latest
+cd ansible
+docker build -t ansible-controller .
+docker run -d --name ansible-controller -v ${pwd}:/ansible ansible-controller:latest
 ```
 
 Connect to jenkins network:
