@@ -20,6 +20,12 @@ All three containers must be running and on the same network before starting thi
 ---
 
 ## Step 1 — Build and Start App Server
+### 1.1 stop & remove existing image if any
+```cmd
+docker stop app-server
+docker rm app-server
+```
+### 1.2 build and run 
 ```cmd
 docker build -t app-server ./app
 docker run -d --name app-server -p 8081:8082 app-server:latest
@@ -39,6 +45,12 @@ Note it down → example: `172.18.0.4`
 ---
 
 ## Step 2 — Build and Start Ansible Controller
+### 2.1 stop & remove existing image if any
+```cmd
+docker stop ansible-controller
+docker rm ansible-controller
+```
+### 2.2 build and run 
 ```cmd
 docker build -t ansible-controller ./ansible
 docker run -d --name ansible-controller -v C:\YOUR_PATH\devops-stack-demo\ansible:/ansible ansible-controller:latest
