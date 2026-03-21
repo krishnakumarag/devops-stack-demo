@@ -5,10 +5,16 @@
 
   vars:
     jar_src: /tmp/demo-0.0.1-SNAPSHOT.jar
-    jar_dest: /app/app.jar
+    jar_dest: "/home/{{ ansible_user }}/app/app.jar"
     app_port: 8082
 
   tasks:
+    - name: Create app directory
+      file:
+        path: "/home/{{ ansible_user }}/app"
+        state: directory
+        mode: '0755'
+        
     - name: Copy JAR to app server
       copy:
         src: "{{ jar_src }}"
