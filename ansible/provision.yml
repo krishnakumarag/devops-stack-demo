@@ -1,7 +1,0 @@
----
-- name: Provision app server
-  hosts: appservers
-  become: yes
-
-  roles:
-    - role: provision

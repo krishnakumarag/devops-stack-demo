@@ -1,7 +1,0 @@
----
-- name: Deploy Java application
-  hosts: appservers
-  become: no
-
-  roles:
-    - deploy

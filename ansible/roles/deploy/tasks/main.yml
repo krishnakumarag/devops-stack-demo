@@ -1,4 +1,0 @@
----
-- import_tasks: copy.yml
-- import_tasks: start.yml
-- import_tasks: verify.yml

@@ -39,13 +39,28 @@ Paste it in the browser and click **Continue**.
 
 **Step 2 — Skip plugin installation**
 
-- Click **"Select plugins to install"**
-- Click **"None"** at the top to deselect everything
-- Click **"Install"**
+Click **"x"** at the top right to skip and proceed without any plugins.
 
 **Step 3 — Create admin user**
 
-Fill in your username and password and click **"Save and Finish"**.
+Fill in your username and password and click **Save and Finish**.
+
+---
+
+## Understanding What We Are Building
+
+Before installing anything — try creating a Freestyle job first to feel the pain of missing plugins:
+```
+Dashboard → New Item → enter a name → Freestyle project → OK
+```
+
+Now look around:
+
+- Click **Source Code Management** — Git option is missing → need Git plugin
+- Click **Add build step** → **Invoke top-level Maven targets** — Maven version dropdown is empty → need to configure Maven tool
+- Click **Add post-build action** — no JUnit option → need JUnit plugin
+
+This is why we install plugins one by one — so you understand what each one adds.
 
 ---
 
@@ -59,10 +74,9 @@ Search and install these one by one:
 | Plugin | Purpose |
 |--------|---------|
 | Git | Clone repositories from GitHub |
-| Maven Integration | Run Maven build commands |
-| Pipeline Stage View | Enable Jenkinsfile-based pipelines |
-| Git Parameter | Choose branch when triggering builds |
 | JUnit | Display test results in Jenkins UI |
+| Publish Over SSH | Copy files to remote server and run commands via SSH |
+| SSH Agent | Use SSH credentials inside Pipeline scripts |
 
 No restart needed after installing.
 
@@ -81,178 +95,184 @@ Dashboard → Manage Jenkins → Tools
 
 ---
 
-## Generate SSH Key for GitHub
-
-Jenkins needs an SSH key to clone your private GitHub repository.
-
-**Step 1 — Generate the key inside Jenkins container**
-```cmd
-docker exec -it jenkins bash
+## Configure Global Shell
 ```
-
-Inside the container:
-```bash
-ssh-keygen -t ed25519 -C "jenkins@devops-demo"
-```
-
-When prompted:
-```
-Enter file in which to save the key: /var/jenkins_home/.ssh/id_ed25519
-Enter passphrase: (leave empty, just press Enter)
-Enter same passphrase again: (press Enter again)
-```
-
-**Step 2 — Copy the public key**
-```bash
-cat /var/jenkins_home/.ssh/id_ed25519.pub
-```
-
-Copy the entire output — it starts with `ssh-ed25519`.
-
-Exit the container:
-```bash
-exit
-```
-
----
-
-## Add SSH Key to GitHub
-
-**Step 1 — Go to GitHub SSH settings**
-```
-GitHub → Settings → SSH and GPG keys → New SSH key
-```
-
-**Step 2 — Add the key**
-```
-Title: jenkins-devops-demo
-Key type: Authentication Key
-Key: (paste the public key you copied above)
-```
-
-Click **Add SSH key**.
-
-**Step 3 — Verify connection from inside Jenkins container**
-```cmd
-docker exec -it jenkins bash
-```
-```bash
-ssh -T git@github.com
-```
-
-You should see:
-```
-Hi YOUR_USERNAME! You've successfully authenticated, but GitHub does not provide shell access.
-```
-
-Exit the container:
-```bash
-exit
-```
-
----
-
-## Add SSH Credentials in Jenkins
-```
-Dashboard → Manage Jenkins → Credentials
-→ System → Global credentials → Add Credentials
-```
-
-Fill in:
-```
-Kind: SSH Username with private key
-Scope: Global
-ID: github-ssh-key
-Description: GitHub SSH Key
-Username: git
-Private Key: Enter directly → Add
-```
-
-Paste the private key:
-```cmd
-docker exec jenkins cat /var/jenkins_home/.ssh/id_ed25519
-```
-
-Copy the entire output including the `-----BEGIN OPENSSH PRIVATE KEY-----` and `-----END OPENSSH PRIVATE KEY-----` lines and paste it in the key field.
-
-Click **Create**.
-
----
-
-## Configure Host Key Verification
-
-This allows Jenkins to connect to GitHub without manual host key approval.
-```
-Dashboard → Manage Jenkins → Security
-→ Scroll to "Git Host Key Verification Configuration"
-→ Host Key Verification Strategy: Accept first connection
+Dashboard → Manage Jenkins → System
+→ Scroll to "Shell"
+→ Shell executable: /bin/bash
 → Save
 ```
-
 ---
 
-## Create a Pipeline Job
+## Create Freestyle Job — Build and Test
 
 **Step 1 — New Item**
 ```
 Dashboard → New Item
-→ Name: devops-stack-demo-pipeline
-→ Select: Pipeline
-→ Click: OK
+→ Name: devops-freestyle-demo
+→ Select: Freestyle project
+→ OK
 ```
 
-**Step 2 — Configure parameters**
+**Step 2 — Source Code Management**
 ```
-→ Tick "This project is parameterized"
-→ Add Parameter → Git Parameter
-→ Name: BRANCH
-→ Parameter Type: Branch
-→ Default Value: origin/main
-```
-
-**Step 3 — Configure Pipeline source**
-
-Scroll down to the Pipeline section:
-```
-Definition: Pipeline script from SCM
-SCM: Git
-Repository URL: git@github.com:YOUR_USERNAME/devops-stack-demo.git
-Credentials: github-ssh-key
-Branch Specifier: ${BRANCH}
-Script Path: jenkins/Jenkinsfile
+→ Select: Git
+→ Repository URL: git@github.com:YOUR_USERNAME/devops-stack-demo.git
+→ Credentials: select github-ssh-key
+→ Branch Specifier: */main
 ```
 
-Click **Save**.
+**Step 3 — Build Steps**
 
----
-
-## Run the Pipeline
+Click **Add build step** → **Invoke top-level Maven targets**:
 ```
-Dashboard → devops-stack-demo-pipeline
-→ Build with Parameters
-→ Select branch from dropdown
-→ Click Build
+Maven Version: Maven-3.9
+Goals: -f app/pom.xml -DskipTests clean package
 ```
 
-Watch the build progress:
+Click **Add build step** again → **Invoke top-level Maven targets**:
 ```
-Dashboard → devops-stack-demo-pipeline → #1 → Console Output
+Maven Version: Maven-3.9
+Goals: -f app/pom.xml test
 ```
 
-A successful build ends with:
+**Step 4 — Post Build Actions**
 ```
-Pipeline completed successfully!
+→ Add post-build action → Publish JUnit test result report
+→ Test report XMLs: app/target/surefire-reports/*.xml
+→ Save
+```
+
+**Step 5 — Build**
+```
+Dashboard → devops-freestyle-demo → Build Now
+```
+
+Click the build number → Console Output to watch logs. A successful build ends with:
+```
+BUILD SUCCESS
 Finished: SUCCESS
 ```
 
 ---
 
-## Useful Docker Commands
+## Start App Server
+```
+cd server
+docker stop app-server
+docker rm app-server
+docker build -t app-server .
+docker run -d --name app-server -p 8081:8082 app-server
+```
+
+## Setup SSH Key for App Server
+
+**Step 1 — Generate key inside Jenkins container**
+```cmd
+docker exec jenkins ssh-keygen -t ed25519 -C "jenkins" -f /var/jenkins_home/.ssh/app-server-key -N ""
+```
+
+**Step 2 — Get the public key**
+```cmd
+docker exec jenkins cat /var/jenkins_home/.ssh/app-server-key.pub
+```
+
+Copy the output.
+
+**Step 3 — Add public key to app-server**
+```cmd
+docker exec -u devops app-server bash -c "echo 'PASTE_PUBLIC_KEY_HERE' > /home/devops/.ssh/authorized_keys && chmod 600 /home/devops/.ssh/authorized_keys"
+```
+
+Use `>` not `>>` to avoid ownership issues.
+
+**Step 4 — Test SSH connection**
+```cmd
+docker exec jenkins ssh -i /var/jenkins_home/.ssh/app-server-key -o StrictHostKeyChecking=no devops@APP_SERVER_IP echo SSH works!
+```
+
+Should print:
+```
+SSH works!
+```
+
+---
+
+## Configure Publish Over SSH Plugin
+```
+Dashboard → Manage Jenkins → System
+→ Scroll to "Publish over SSH"
+→ Click "Add"
+→ Name: app-server
+→ Hostname: APP_SERVER_IP
+→ Username: devops
+→ Path to key: /var/jenkins_home/.ssh/app-server-key
+→ Click "Test Configuration" → should say: Success
+→ Save
+```
+
+---
+
+## Update Freestyle Job — Add Deployment
+
+**Step 1 — Open job configuration**
+```
+Dashboard → devops-freestyle-demo → Configure
+```
+
+**Step 2 — Add post-build action**
+```
+→ Add post-build action → Send build artifacts over SSH
+→ SSH Server Name: app-server
+```
+
+Fill in the Transfer Set:
+```
+Source files:     app/target/demo-0.0.1-SNAPSHOT.jar
+Remove prefix:    app/target
+Remote directory: /app
+```
+
+Exec command:
+```bash
+kill $(cat /tmp/app.pid) 2>/dev/null || true
+sleep 2
+nohup java -jar /home/devops/app/demo-0.0.1-SNAPSHOT.jar --server.port=8082 > /tmp/app.log 2>&1 &
+echo $! > /tmp/app.pid
+```
+
+Click **Save**.
+
+**Note — why `/home/devops/app` and not `/app`:**
+
+Publish Over SSH always uses the SSH user's home directory as root. So `Remote directory: /app` copies to `/home/devops/app/` on the server. The exec command path must match this.
+
+**Step 3 — Build**
+```
+Dashboard → devops-freestyle-demo → Build Now
+```
+
+**Step 4 — Verify app is running**
+```cmd
+docker exec app-server bash -c "cat /tmp/app.log"
+```
+
+You should see:
+```
+Tomcat started on port 8082
+Started DemoApplication
+```
+
+Open browser at `http://localhost:8081` — app is live.
+
+---
+
+## Useful Commands
 ```cmd
 REM Stop Jenkins
 docker compose down
 
-REM Start Jenkins (keeps existing data)
+REM Start Jenkins (keeps all data)
 docker compose up -d
 
 REM Restart Jenkins
@@ -261,7 +281,50 @@ docker restart jenkins
 REM View live logs
 docker logs -f jenkins
 
-REM Wipe Jenkins completely and start fresh
+REM Wipe Jenkins and start fresh
 docker compose down -v
-docker compose up -d
+docker compose up -d --build
 ```
+
+---
+
+## Troubleshooting
+
+**SSH connection fails — permission denied**
+```cmd
+REM Check authorized_keys ownership — must be owned by devops not root
+docker exec app-server bash -c "ls -la /home/devops/.ssh/"
+
+REM Fix ownership if wrong
+docker exec app-server bash -c "chown devops:devops /home/devops/.ssh/authorized_keys && chmod 600 /home/devops/.ssh/authorized_keys"
+```
+
+**JAR not found on server**
+```cmd
+REM Find where the JAR actually landed
+docker exec app-server bash -c "find / -name '*.jar' 2>/dev/null"
+```
+
+**App not starting**
+```cmd
+REM Check app logs
+docker exec app-server bash -c "cat /tmp/app.log"
+
+REM Check if Java is installed
+docker exec app-server bash -c "java -version"
+```
+
+**Maven not found in Jenkins**
+```
+Manage Jenkins → Tools → Maven installations
+→ Verify Maven-3.9 is configured with Install automatically ticked
+```
+
+**IP address changed after container restart**
+```cmd
+docker inspect app-server --format "{{json .NetworkSettings.Networks.jenkins_default.IPAddress}}"
+```
+
+Update the new IP in:
+- Publish Over SSH server configuration
+- Exec command paths if hardcoded
