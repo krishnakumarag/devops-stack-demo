@@ -1,0 +1,3 @@
+---
+- import_tasks: java.yml
+- import_tasks: curl.yml

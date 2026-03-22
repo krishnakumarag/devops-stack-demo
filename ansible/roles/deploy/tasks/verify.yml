@@ -1,0 +1,10 @@
+---
+- name: Verify app is running
+  uri:
+    url: "http://localhost:{{ app_port }}/actuator/health"
+    return_content: yes
+  register: health_check
+
+- name: Print health status
+  debug:
+    msg: "{{ health_check.content }}"

@@ -14,9 +14,6 @@ RUN mkdir -p /app && \
     chown -R devops:devops /app && \
     echo 'devops ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-# RUN sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
-#     sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config && \
-#     sed -i 's/#StrictModes yes/StrictModes yes/' /etc/ssh/sshd_config
 
 EXPOSE 22
 EXPOSE 8082

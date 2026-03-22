@@ -1,0 +1,12 @@
+---
+- name: Create app directory
+  file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Copy JAR to app server
+  copy:
+    src: "{{ jar_src }}"
+    dest: "{{ jar_dest }}"
+    mode: '0755'

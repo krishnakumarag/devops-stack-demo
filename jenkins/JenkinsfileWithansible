@@ -38,7 +38,7 @@ pipeline {
                     sh '''
                         ssh -o StrictHostKeyChecking=no \
                             ${ANSIBLE_USER}@${ANSIBLE_CONTROLLER_IP} \
-                            "ansible-playbook -i /ansible/host.ini /ansible/provision.yml"
+                            "ansible-playbook -i /ansible/inventory/hosts.ini /ansible/provision.yml"
                     '''
                 }
             }
@@ -56,7 +56,7 @@ pipeline {
                         # Trigger deploy playbook
                         ssh -o StrictHostKeyChecking=no \
                             ${ANSIBLE_USER}@${ANSIBLE_CONTROLLER_IP} \
-                            "ansible-playbook -i /ansible/host.ini /ansible/deploy.yml"
+                            "ansible-playbook -i /ansible/inventory/hosts.ini /ansible/deploy.yml"
                     '''
                 }
             }

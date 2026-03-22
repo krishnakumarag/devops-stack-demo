@@ -1,0 +1,14 @@
+---
+- name: Install curl
+  become: yes
+  apt:
+    name: curl
+    state: present
+
+- name: Verify curl installation
+  command: curl --version
+  register: curl_version
+
+- name: Print curl version
+  debug:
+    msg: "{{ curl_version.stdout_lines[0] }}"

@@ -3,48 +3,5 @@
   hosts: appservers
   become: no
 
-  vars:
-    jar_src: /tmp/demo-0.0.1-SNAPSHOT.jar
-    jar_dest: "/home/{{ ansible_user }}/app/app.jar"
-    app_port: 8082
-
-  tasks:
-    - name: Create app directory
-      file:
-        path: "/home/{{ ansible_user }}/app"
-        state: directory
-        mode: '0755'
-        
-    - name: Copy JAR to app server
-      copy:
-        src: "{{ jar_src }}"
-        dest: "{{ jar_dest }}"
-        mode: '0755'
-
-    - name: Stop existing app
-      shell: kill $(cat /tmp/app.pid) 2>/dev/null || true
-
-    - name: Wait for app to stop
-      pause:
-        seconds: 2
-
-    - name: Start the application
-      shell: |
-        nohup java -jar {{ jar_dest }} --server.port={{ app_port }} > /tmp/app.log 2>&1 &
-        echo $! > /tmp/app.pid
-      async: 0
-      poll: 0
-
-    - name: Wait for app to start
-      pause:
-        seconds: 15
-
-    - name: Verify app is running
-      uri:
-        url: "http://localhost:{{ app_port }}/actuator/health"
-        return_content: yes
-      register: health_check
-
-    - name: Print health status
-      debug:
-        msg: "{{ health_check.content }}"
+  roles:
+    - deploy

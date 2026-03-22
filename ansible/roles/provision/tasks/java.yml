@@ -1,0 +1,15 @@
+---
+- name: Install Java 21
+  become: yes
+  apt:
+    name: openjdk-21-jdk
+    state: present
+    update_cache: yes
+
+- name: Verify Java installation
+  command: java -version
+  register: java_version
+
+- name: Print Java version
+  debug:
+    msg: "{{ java_version.stderr }}"

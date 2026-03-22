@@ -1,0 +1,5 @@
+---
+jar_src: /tmp/demo-0.0.1-SNAPSHOT.jar
+jar_dest: "/home/{{ ansible_user }}/app/app.jar"
+app_port: 8082
+app_dir: "/home/{{ ansible_user }}/app"
