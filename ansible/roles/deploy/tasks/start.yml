@@ -7,11 +7,11 @@
     seconds: 2
 
 - name: Start the application
-      shell: |
-        nohup java -jar {{ jar_dest }} --server.port={{ app_port }} > /tmp/app.log 2>&1 &
-        echo $! > /tmp/app.pid
-      async: 0
-      poll: 0
+  shell: |
+    nohup java -jar {{ jar_dest }} --server.port={{ app_port }} > /tmp/app.log 2>&1 &
+    echo $! > /tmp/app.pid
+  async: 0
+  poll: 0
 
 - name: Wait for app to start
   pause:
